@@ -43,9 +43,8 @@ function App() {
   const startLongPress = () => {
     longPressTimer.current = setTimeout(() => {
       toggleAdmin()
-      // Optional: vibration feedback if supported
       if (navigator.vibrate) navigator.vibrate(100)
-    }, 2000) // 2 seconds for admin access
+    }, 1500) // 1.5 seconds for snappier mobile access
   }
 
   const cancelLongPress = () => {
@@ -170,15 +169,15 @@ function App() {
               />
             )}
 
-            <div className="py-12 text-center opacity-40">
+            <div className="py-12 text-center">
               <button
                 onMouseDown={startLongPress}
                 onMouseUp={cancelLongPress}
                 onMouseLeave={cancelLongPress}
                 onTouchStart={startLongPress}
                 onTouchEnd={cancelLongPress}
-                className="text-white font-bangers text-sm tracking-widest uppercase hover:text-volcano-orange transition-colors select-none active:scale-95 touch-none"
-                title="Hold for 2 seconds for Admin Mode"
+                className="text-white/20 font-bangers text-xs tracking-widest uppercase hover:text-volcano-orange active:text-volcano-orange active:scale-110 transition-all select-none touch-none bg-transparent border-none outline-none"
+                title="Hold for 1.5s for Admin Mode"
               >
                 © 2026 Expedición Máximo V
               </button>

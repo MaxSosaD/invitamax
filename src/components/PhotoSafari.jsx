@@ -13,12 +13,9 @@ const PhotoSafari = ({ onPhotoUpload }) => {
     const handleImageSelect = (e) => {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                setSelectedImage(event.target.result);
-                processImage(event.target.result);
-            };
-            reader.readAsDataURL(file);
+            const objectUrl = URL.createObjectURL(file);
+            setSelectedImage(objectUrl);
+            processImage(objectUrl);
         }
     };
 
@@ -27,13 +24,27 @@ const PhotoSafari = ({ onPhotoUpload }) => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
 
-        // Helper to load images as promises
-        const loadImage = (src) => new Promise((resolve, reject) => {
+        // Helper to load and decode images
+        const loadImage = async (src) => {
             const img = new Image();
-            img.onload = () => resolve(img);
-            img.onerror = reject;
             img.src = src;
-        });
+            try {
+                if (img.decode) await img.decode();
+                else {
+                    await new Promise((resolve, reject) => {
+                        img.onload = resolve;
+                        img.onerror = reject;
+                    });
+                }
+            } catch (e) {
+                console.warn('Decode failed, falling back to onload', e);
+                await new Promise((resolve) => {
+                    img.onload = resolve;
+                    img.src = src; // Re-trigger
+                });
+            }
+            return img;
+        };
 
         try {
             // Load both images simultaneously
@@ -46,23 +57,31 @@ const PhotoSafari = ({ onPhotoUpload }) => {
             canvas.width = 1080;
             canvas.height = 1080;
 
+            // Clear with a base color (earthy)
+            ctx.fillStyle = '#F5E6D3';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
             // 1. Draw user image (centered and cropped)
             const scale = Math.max(canvas.width / userImg.width, canvas.height / userImg.height);
             const x = (canvas.width - userImg.width * scale) / 2;
             const y = (canvas.height - userImg.height * scale) / 2;
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(userImg, x, y, userImg.width * scale, userImg.height * scale);
 
             // 2. Draw frame on top
             ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
 
             // Generate final result
-            const finalDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            const finalDataUrl = canvas.toDataURL('image/jpeg', 0.85);
             setProcessedImage(finalDataUrl);
+
+            // Cleanup ObjectURL to free memory
+            if (imageSrc.startsWith('blob:')) {
+                URL.revokeObjectURL(imageSrc);
+            }
         } catch (error) {
             console.error('Error processing image Safari:', error);
-            alert('Error al procesar la foto. Intenta de nuevo.');
+            alert('Error al capturar la foto. Prueba de nuevo.');
         } finally {
             setIsProcessing(false);
         }
