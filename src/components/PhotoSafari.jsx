@@ -24,69 +24,62 @@ const PhotoSafari = ({ onPhotoUpload }) => {
         }
     };
 
-    const processImage = async (imageSrc) => {
+    const generateFinalImage = async () => {
         setIsProcessing(true);
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
 
-        // Helper to load and decode images
         const loadImage = async (src) => {
             const img = new Image();
             img.src = src;
             try {
                 if (img.decode) await img.decode();
                 else {
-                    await new Promise((resolve, reject) => {
-                        img.onload = resolve;
-                        img.onerror = reject;
-                    });
+                    await new Promise((resolve) => { img.onload = resolve; });
                 }
             } catch (e) {
-                console.warn('Decode failed, falling back to onload', e);
+                console.warn('Load/Decode failed', e);
                 await new Promise((resolve) => {
                     img.onload = resolve;
-                    img.src = src; // Re-trigger
+                    img.src = src;
                 });
             }
             return img;
         };
 
         try {
-            // Load both images simultaneously
-            const [userImg, frameImg] = await Promise.all([
-                loadImage(imageSrc),
-                loadImage('/dino_frame.png')
-            ]);
+            const userImg = await loadImage(selectedImage);
+            const frameImg = frameImage.current;
+            if (!frameImg.complete) await loadImage(frameImg.src);
 
-            // Set canvas size
+            // Set a fixed high-quality square size
             canvas.width = 1080;
             canvas.height = 1080;
 
-            // Clear with a base color (earthy)
+            // Background fill (soft parchment/earth tone)
             ctx.fillStyle = '#F5E6D3';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Draw user image (centered and cropped)
+            // ENABLE high quality scaling
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            // 1. Draw photo (centered and cropped)
             const scale = Math.max(canvas.width / userImg.width, canvas.height / userImg.height);
             const x = (canvas.width - userImg.width * scale) / 2;
             const y = (canvas.height - userImg.height * scale) / 2;
-
             ctx.drawImage(userImg, x, y, userImg.width * scale, userImg.height * scale);
 
-            // 2. Draw frame on top
+            // 2. Draw frame overlay
             ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
 
-            // Generate final result
-            const finalDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            setProcessedImage(finalDataUrl);
-
-            // Cleanup ObjectURL to free memory
-            if (imageSrc.startsWith('blob:')) {
-                URL.revokeObjectURL(imageSrc);
-            }
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            setProcessedImage(dataUrl);
+            return dataUrl;
         } catch (error) {
-            console.error('Error processing image Safari:', error);
-            alert('Error al capturar la foto. Prueba de nuevo.');
+            console.error('Error merging images:', error);
+            alert('Error al procesar la imagen Safari. Intenta de nuevo.');
+            return null;
         } finally {
             setIsProcessing(false);
         }
