@@ -38,7 +38,7 @@ const PhotoSafari = ({ onPhotoUpload }) => {
                     await new Promise((resolve) => { img.onload = resolve; });
                 }
             } catch (e) {
-                console.warn('Load/Decode failed', e);
+                console.warn('Load failed', e);
                 await new Promise((resolve) => {
                     img.onload = resolve;
                     img.src = src;
@@ -52,26 +52,37 @@ const PhotoSafari = ({ onPhotoUpload }) => {
             const frameImg = frameImage.current;
             if (!frameImg.complete) await loadImage(frameImg.src);
 
-            // Set a fixed high-quality square size
             canvas.width = 1080;
             canvas.height = 1080;
 
-            // Background fill (soft parchment/earth tone)
-            ctx.fillStyle = '#F5E6D3';
+            // 1. Draw User Photo (scaled and centered)
+            ctx.fillStyle = '#1a1a1a'; // Dark background
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // ENABLE high quality scaling
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
 
-            // 1. Draw photo (centered and cropped)
             const scale = Math.max(canvas.width / userImg.width, canvas.height / userImg.height);
             const x = (canvas.width - userImg.width * scale) / 2;
             const y = (canvas.height - userImg.height * scale) / 2;
             ctx.drawImage(userImg, x, y, userImg.width * scale, userImg.height * scale);
 
-            // 2. Draw frame overlay
-            ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
+            // 2. Punch a hole in the frame before drawing it
+            // We use an offscreen canvas to "prepare" the frame
+            const buffer = document.createElement('canvas');
+            buffer.width = 1080;
+            buffer.height = 1080;
+            const bCtx = buffer.getContext('2d');
+
+            bCtx.drawImage(frameImg, 0, 0, buffer.width, buffer.height);
+
+            // Clear the checkered center (approx 75% region)
+            // The dinosaurs are on the corners, so 15% margin is safe
+            const margin = 160;
+            bCtx.clearRect(margin, margin, buffer.width - (margin * 2), buffer.height - (margin * 2) - 40);
+
+            // 3. Draw the "cleaned" frame on top of the photo
+            ctx.drawImage(buffer, 0, 0, canvas.width, canvas.height);
 
             const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
             setProcessedImage(dataUrl);
@@ -132,16 +143,24 @@ const PhotoSafari = ({ onPhotoUpload }) => {
             ) : (
                 <div className="space-y-6">
                     <div className="relative aspect-square rounded-2xl overflow-hidden border-4 border-volcano-orange shadow-2xl bg-black">
-                        {/* CSS-BASED PREVIEW: Photo then Frame on top */}
+                        {/* PHOTO (Bottom) */}
                         <img
                             src={selectedImage}
                             alt="Preview"
                             className="w-full h-full object-cover"
                         />
-                        <img
-                            src="/dino_frame.png"
-                            alt="Frame Overlay"
-                            className="absolute inset-0 w-full h-full object-fill pointer-events-none z-10"
+
+                        {/* FRAME (Top) with Mask to hide its checkered center */}
+                        <div
+                            className="absolute inset-0 z-10 pointer-events-none"
+                            style={{
+                                backgroundImage: 'url(/dino_frame.png)',
+                                backgroundSize: '100% 100%',
+                                maskImage: 'linear-gradient(to bottom, black 16%, transparent 16%, transparent 80%, black 80%), linear-gradient(to right, black 16%, transparent 16%, transparent 84%, black 84%)',
+                                WebkitMaskImage: 'linear-gradient(to bottom, black 16%, transparent 16%, transparent 80%, black 80%), linear-gradient(to right, black 16%, transparent 16%, transparent 84%, black 84%)',
+                                maskComposite: 'exclude',
+                                WebkitMaskComposite: 'xor'
+                            }}
                         />
 
                         {isProcessing && (
