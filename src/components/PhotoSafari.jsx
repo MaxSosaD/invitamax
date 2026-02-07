@@ -88,14 +88,23 @@ const PhotoSafari = ({ onPhotoUpload }) => {
         if (!finalImg) return;
 
         setIsProcessing(true);
+        // Simulate upload delay
         setTimeout(() => {
             setIsProcessing(false);
             setIsUploaded(true);
+
             if (onPhotoUpload) {
                 onPhotoUpload(finalImg);
             }
-            if (selectedImage.startsWith('blob:')) {
-                URL.revokeObjectURL(selectedImage);
+
+            // CLEANUP: Reset the preview states immediately after upload
+            // This ensures a new user doesn't see the previous photo.
+            const oldSelectedImage = selectedImage;
+            setSelectedImage(null);
+            setProcessedImage(null);
+
+            if (oldSelectedImage && oldSelectedImage.startsWith('blob:')) {
+                URL.revokeObjectURL(oldSelectedImage);
             }
         }, 1200);
     };
@@ -111,7 +120,27 @@ const PhotoSafari = ({ onPhotoUpload }) => {
                 </p>
             </div>
 
-            {!selectedImage ? (
+            {isUploaded ? (
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="bg-[#2D5A27] text-white p-8 rounded-2xl text-center space-y-4 border-2 border-jungle-light shadow-xl"
+                >
+                    <div className="flex justify-center mb-2">
+                        <div className="bg-volcano-orange p-3 rounded-full">
+                            <Check size={48} className="text-white" />
+                        </div>
+                    </div>
+                    <p className="font-luckiest text-2xl tracking-wider">¡FOTO CAPTURADA!</p>
+                    <p className="font-bangers text-lg opacity-90">Ya puedes verla en la galería del evento.</p>
+                    <button
+                        onClick={() => setIsUploaded(false)}
+                        className="w-full mt-4 bg-white/10 hover:bg-white/20 text-white font-bangers py-3 rounded-xl transition-all border border-white/20 uppercase tracking-widest"
+                    >
+                        Capturar otra
+                    </button>
+                </motion.div>
+            ) : !selectedImage ? (
                 <div
                     onClick={() => fileInputRef.current.click()}
                     className="aspect-square bg-black/40 rounded-2xl border-4 border-dashed border-white/20 flex flex-col items-center justify-center cursor-pointer hover:bg-black/60 transition-all group"
@@ -152,38 +181,21 @@ const PhotoSafari = ({ onPhotoUpload }) => {
                         )}
                     </div>
 
-                    {!isUploaded ? (
-                        <div className="grid grid-cols-2 gap-4">
-                            <button
-                                onClick={() => { setSelectedImage(null); setProcessedImage(null); }}
-                                className="bg-white/10 hover:bg-white/20 text-white font-bangers py-3 rounded-xl transition-all"
-                            >
-                                REPETIR
-                            </button>
-                            <button
-                                onClick={handleUpload}
-                                className="bg-volcano-orange hover:bg-volcano-red text-white font-bangers py-3 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_0_rgb(153,51,0)] active:shadow-none active:translate-y-1 transition-all"
-                            >
-                                <Upload size={20} /> SUBIR
-                            </button>
-                        </div>
-                    ) : (
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="bg-[#2D5A27] text-white p-4 rounded-xl text-center space-y-2"
+                    <div className="grid grid-cols-2 gap-4">
+                        <button
+                            onClick={() => { setSelectedImage(null); setProcessedImage(null); }}
+                            className="bg-white/10 hover:bg-white/20 text-white font-bangers py-3 rounded-xl transition-all"
                         >
-                            <div className="flex justify-center mb-2"><Check size={32} /></div>
-                            <p className="font-luckiest text-xl">¡FOTO CAPTURADA!</p>
-                            <p className="font-bangers">Ya puedes verla en la galería del evento.</p>
-                            <button
-                                onClick={() => { setProcessedImage(null); setIsUploaded(false); }}
-                                className="mt-4 text-sm underline opacity-70"
-                            >
-                                Tomar otra
-                            </button>
-                        </motion.div>
-                    )}
+                            REPETIR
+                        </button>
+                        <button
+                            onClick={handleUpload}
+                            disabled={isProcessing}
+                            className={`${isProcessing ? 'opacity-50' : ''} bg-volcano-orange hover:bg-volcano-red text-white font-bangers py-3 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_0_rgb(153,51,0)] active:shadow-none active:translate-y-1 transition-all`}
+                        >
+                            <Upload size={20} /> SUBIR
+                        </button>
+                    </div>
                 </div>
             )}
 
