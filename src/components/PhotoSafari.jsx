@@ -9,13 +9,18 @@ const PhotoSafari = ({ onPhotoUpload }) => {
     const [isUploaded, setIsUploaded] = useState(false);
     const canvasRef = useRef(null);
     const fileInputRef = useRef(null);
+    const frameImage = useRef(new Image());
+
+    useEffect(() => {
+        frameImage.current.src = '/dino_frame.png';
+    }, []);
 
     const handleImageSelect = (e) => {
         const file = e.target.files[0];
         if (file) {
             const objectUrl = URL.createObjectURL(file);
             setSelectedImage(objectUrl);
-            processImage(objectUrl);
+            setProcessedImage(null); // Ensure we show the CSS preview first
         }
     };
 
@@ -87,16 +92,21 @@ const PhotoSafari = ({ onPhotoUpload }) => {
         }
     };
 
-    const handleUpload = () => {
+    const handleUpload = async () => {
+        const finalImg = await generateFinalImage();
+        if (!finalImg) return;
+
         setIsProcessing(true);
-        // Simulate upload delay
         setTimeout(() => {
             setIsProcessing(false);
             setIsUploaded(true);
             if (onPhotoUpload) {
-                onPhotoUpload(processedImage);
+                onPhotoUpload(finalImg);
             }
-        }, 1500);
+            if (selectedImage.startsWith('blob:')) {
+                URL.revokeObjectURL(selectedImage);
+            }
+        }, 1200);
     };
 
     return (
@@ -110,7 +120,7 @@ const PhotoSafari = ({ onPhotoUpload }) => {
                 </p>
             </div>
 
-            {!processedImage ? (
+            {!selectedImage ? (
                 <div
                     onClick={() => fileInputRef.current.click()}
                     className="aspect-square bg-black/40 rounded-2xl border-4 border-dashed border-white/20 flex flex-col items-center justify-center cursor-pointer hover:bg-black/60 transition-all group"
@@ -128,11 +138,23 @@ const PhotoSafari = ({ onPhotoUpload }) => {
                 </div>
             ) : (
                 <div className="space-y-6">
-                    <div className="relative aspect-square rounded-2xl overflow-hidden border-4 border-volcano-orange shadow-2xl">
-                        <img src={processedImage} alt="Safari" className="w-full h-full object-cover" />
+                    <div className="relative aspect-square rounded-2xl overflow-hidden border-4 border-volcano-orange shadow-2xl bg-black">
+                        {/* CSS-BASED PREVIEW: Photo then Frame on top */}
+                        <img
+                            src={selectedImage}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                        />
+                        <img
+                            src="/dino_frame.png"
+                            alt="Frame Overlay"
+                            className="absolute inset-0 w-full h-full object-fill pointer-events-none z-10"
+                        />
+
                         {isProcessing && (
-                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                <RefreshCw className="text-white animate-spin" size={48} />
+                            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center z-30">
+                                <RefreshCw className="text-white animate-spin mb-2" size={48} />
+                                <span className="text-white font-bangers tracking-widest">PROCESANDO...</span>
                             </div>
                         )}
                     </div>
