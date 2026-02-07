@@ -12,7 +12,7 @@ const PhotoSafari = ({ onPhotoUpload }) => {
     const frameImage = useRef(new Image());
 
     useEffect(() => {
-        frameImage.current.src = '/dino_frame.png';
+        frameImage.current.src = '/dino_background.png';
     }, []);
 
     const handleImageSelect = (e) => {
@@ -67,22 +67,9 @@ const PhotoSafari = ({ onPhotoUpload }) => {
             const y = (canvas.height - userImg.height * scale) / 2;
             ctx.drawImage(userImg, x, y, userImg.width * scale, userImg.height * scale);
 
-            // 2. Punch a hole in the frame before drawing it
-            // We use an offscreen canvas to "prepare" the frame
-            const buffer = document.createElement('canvas');
-            buffer.width = 1080;
-            buffer.height = 1080;
-            const bCtx = buffer.getContext('2d');
-
-            bCtx.drawImage(frameImg, 0, 0, buffer.width, buffer.height);
-
-            // PUNCH A SMALLER HOLE: More conservative (30% margin from edges)
-            // This protects the dinosaurs in the corners and the text at the bottom.
-            const margin = 320;
-            bCtx.clearRect(margin, margin, buffer.width - (margin * 2), buffer.height - (margin * 2) - 100);
-
-            // 3. Draw the "cleaned" frame on top of the photo
-            ctx.drawImage(buffer, 0, 0, canvas.width, canvas.height);
+            // 2. Draw frame overlay on top
+            // Since the user fixed the image transparency, we no longer need the "hole punch" buffer
+            ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
 
             const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
             setProcessedImage(dataUrl);
@@ -150,16 +137,11 @@ const PhotoSafari = ({ onPhotoUpload }) => {
                             className="w-full h-full object-cover"
                         />
 
-                        {/* FRAME (Top) with Mask to hide its checkered center */}
-                        <div
-                            className="absolute inset-0 z-10 pointer-events-none"
-                            style={{
-                                backgroundImage: 'url(/dino_frame.png)',
-                                backgroundSize: '100% 100%',
-                                // Use a radial mask to create a soft "lens" effect
-                                maskImage: 'radial-gradient(circle, transparent 40%, black 60%)',
-                                WebkitMaskImage: 'radial-gradient(circle, transparent 40%, black 60%)',
-                            }}
+                        {/* FRAME (Top) - Transparent PNG */}
+                        <img
+                            src="/dino_background.png"
+                            alt="Frame Overlay"
+                            className="absolute inset-0 w-full h-full object-fill pointer-events-none z-10"
                         />
 
                         {isProcessing && (
