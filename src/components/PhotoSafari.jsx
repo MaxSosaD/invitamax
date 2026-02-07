@@ -76,10 +76,10 @@ const PhotoSafari = ({ onPhotoUpload }) => {
 
             bCtx.drawImage(frameImg, 0, 0, buffer.width, buffer.height);
 
-            // Clear the checkered center (approx 75% region)
-            // The dinosaurs are on the corners, so 15% margin is safe
-            const margin = 160;
-            bCtx.clearRect(margin, margin, buffer.width - (margin * 2), buffer.height - (margin * 2) - 40);
+            // PUNCH A SMALLER HOLE: More conservative (30% margin from edges)
+            // This protects the dinosaurs in the corners and the text at the bottom.
+            const margin = 320;
+            bCtx.clearRect(margin, margin, buffer.width - (margin * 2), buffer.height - (margin * 2) - 100);
 
             // 3. Draw the "cleaned" frame on top of the photo
             ctx.drawImage(buffer, 0, 0, canvas.width, canvas.height);
@@ -156,10 +156,9 @@ const PhotoSafari = ({ onPhotoUpload }) => {
                             style={{
                                 backgroundImage: 'url(/dino_frame.png)',
                                 backgroundSize: '100% 100%',
-                                maskImage: 'linear-gradient(to bottom, black 16%, transparent 16%, transparent 80%, black 80%), linear-gradient(to right, black 16%, transparent 16%, transparent 84%, black 84%)',
-                                WebkitMaskImage: 'linear-gradient(to bottom, black 16%, transparent 16%, transparent 80%, black 80%), linear-gradient(to right, black 16%, transparent 16%, transparent 84%, black 84%)',
-                                maskComposite: 'exclude',
-                                WebkitMaskComposite: 'xor'
+                                // Use a radial mask to create a soft "lens" effect
+                                maskImage: 'radial-gradient(circle, transparent 40%, black 60%)',
+                                WebkitMaskImage: 'radial-gradient(circle, transparent 40%, black 60%)',
                             }}
                         />
 
