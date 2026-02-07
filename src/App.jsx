@@ -14,6 +14,7 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('isAdmin') === 'true')
   const [photos, setPhotos] = useState(() => JSON.parse(localStorage.getItem('savedPhotos') || '[]'))
   const videoRef = useRef(null)
+  const longPressTimer = useRef(null)
 
   const handleNewPhoto = (newPhoto) => {
     const updatedPhotos = [newPhoto, ...photos]
@@ -36,6 +37,21 @@ function App() {
   const updateSetting = (setter, key, value) => {
     setter(value)
     localStorage.setItem(key, value)
+  }
+
+  // Admin Long Press Logic
+  const startLongPress = () => {
+    longPressTimer.current = setTimeout(() => {
+      toggleAdmin()
+      // Optional: vibration feedback if supported
+      if (navigator.vibrate) navigator.vibrate(100)
+    }, 2000) // 2 seconds for admin access
+  }
+
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+    }
   }
 
   const toggleMute = () => {
@@ -154,18 +170,19 @@ function App() {
               />
             )}
 
-            <div className="py-8 text-center">
+            <div className="py-12 text-center opacity-40">
               <button
-                onLongPress={toggleAdmin} // This is just a conceptual trigger, standard click is fine for now
-                onClick={(e) => {
-                  if (e.detail === 3) toggleAdmin(); // Triple click secret
-                }}
-                className="text-white/20 font-bangers text-xs tracking-widest uppercase hover:text-white/40 transition-colors"
-                title="Triple click for Admin"
+                onMouseDown={startLongPress}
+                onMouseUp={cancelLongPress}
+                onMouseLeave={cancelLongPress}
+                onTouchStart={startLongPress}
+                onTouchEnd={cancelLongPress}
+                className="text-white font-bangers text-sm tracking-widest uppercase hover:text-volcano-orange transition-colors select-none active:scale-95 touch-none"
+                title="Hold for 2 seconds for Admin Mode"
               >
                 © 2026 Expedición Máximo V
               </button>
-              {isAdmin && <div className="text-[10px] text-volcano-orange mt-1">ADMIN MODE ACTIVE</div>}
+              {isAdmin && <div className="text-[10px] text-volcano-orange mt-2 animate-pulse font-bold tracking-tighter">BITÁCORA ADMIN ACTIVA</div>}
             </div>
           </section>
         </div>

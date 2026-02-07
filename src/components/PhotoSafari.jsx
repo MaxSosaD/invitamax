@@ -22,36 +22,50 @@ const PhotoSafari = ({ onPhotoUpload }) => {
         }
     };
 
-    const processImage = (imageSrc) => {
+    const processImage = async (imageSrc) => {
         setIsProcessing(true);
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
-        const img = new Image();
-        const frame = new Image();
 
-        img.onload = () => {
-            // Set canvas size (e.g., 1080x1080 for square Safari photo)
+        // Helper to load images as promises
+        const loadImage = (src) => new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = src;
+        });
+
+        try {
+            // Load both images simultaneously
+            const [userImg, frameImg] = await Promise.all([
+                loadImage(imageSrc),
+                loadImage('/dino_frame.png')
+            ]);
+
+            // Set canvas size
             canvas.width = 1080;
             canvas.height = 1080;
 
-            // Draw user image (centered and cropped)
-            const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
-            const x = (canvas.width - img.width * scale) / 2;
-            const y = (canvas.height - img.height * scale) / 2;
+            // 1. Draw user image (centered and cropped)
+            const scale = Math.max(canvas.width / userImg.width, canvas.height / userImg.height);
+            const x = (canvas.width - userImg.width * scale) / 2;
+            const y = (canvas.height - userImg.height * scale) / 2;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+            ctx.drawImage(userImg, x, y, userImg.width * scale, userImg.height * scale);
 
-            // Draw frame on top
-            frame.src = '/dino_frame.png';
-            frame.onload = () => {
-                ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
-                const finalDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                setProcessedImage(finalDataUrl);
-                setIsProcessing(false);
-            };
-        };
-        img.src = imageSrc;
+            // 2. Draw frame on top
+            ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
+
+            // Generate final result
+            const finalDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            setProcessedImage(finalDataUrl);
+        } catch (error) {
+            console.error('Error processing image Safari:', error);
+            alert('Error al procesar la foto. Intenta de nuevo.');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const handleUpload = () => {
