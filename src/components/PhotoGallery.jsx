@@ -1,6 +1,6 @@
-import { motion } from 'framer-motion';
+import { Trash2 } from 'lucide-react';
 
-const PhotoGallery = ({ photos = [] }) => {
+const PhotoGallery = ({ photos = [], isAdmin = false, onDeletePhoto }) => {
     if (photos.length === 0) return null;
 
     return (
@@ -32,6 +32,17 @@ const PhotoGallery = ({ photos = [] }) => {
 
                         {/* Decorative tape or stone effect */}
                         <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-16 h-8 bg-volcano-orange/30 backdrop-blur-sm -rotate-2" />
+
+                        {/* Admin Delete Button */}
+                        {isAdmin && (
+                            <button
+                                onClick={() => onDeletePhoto(index)}
+                                className="absolute top-2 right-2 bg-volcano-red text-white p-2 rounded-full shadow-lg hover:scale-110 transition-transform z-20"
+                                title="Eliminar foto"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        )}
 
                         <div className="absolute bottom-4 left-0 right-0 text-center font-bangers text-earth-brown/60 tracking-widest text-sm italic">
                             EXPEDICIÓN MÁXIMO V

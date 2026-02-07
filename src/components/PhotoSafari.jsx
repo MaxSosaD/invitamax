@@ -46,7 +46,8 @@ const PhotoSafari = ({ onPhotoUpload }) => {
             frame.src = '/dino_frame.png';
             frame.onload = () => {
                 ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
-                setProcessedImage(canvas.toDataURL('image/jpeg', 0.8));
+                const finalDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                setProcessedImage(finalDataUrl);
                 setIsProcessing(false);
             };
         };
