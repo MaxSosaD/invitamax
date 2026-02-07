@@ -2,12 +2,21 @@ import { useState, useRef } from 'react'
 import JungleReveal from './components/JungleReveal'
 import RSVPForm from './components/RSVPForm'
 import EventInfo from './components/EventInfo'
+import PhotoSafari from './components/PhotoSafari'
+import PhotoGallery from './components/PhotoGallery'
 import { Volume2, VolumeX } from 'lucide-react'
 
 function App() {
   const [showContent, setShowContent] = useState(false)
   const [isMuted, setIsMuted] = useState(true)
+  const [isRSVPFossilized, setIsRSVPFossilized] = useState(true)
+  const [isPhotoSafariEnabled, setIsPhotoSafariEnabled] = useState(true) // Toggle for Photo Safari
+  const [photos, setPhotos] = useState([]) // Local storage for gallery photos during testing
   const videoRef = useRef(null)
+
+  const handleNewPhoto = (newPhoto) => {
+    setPhotos(prev => [newPhoto, ...prev])
+  }
 
   const toggleMute = () => {
     if (videoRef.current) {
@@ -65,10 +74,20 @@ function App() {
               <EventInfo {...eventDetails} />
 
               {/* RSVP Form Section */}
-              <div className="mt-12 pt-8 border-t-2 border-jungle-light/20">
-                <RSVPForm />
+              <div className="mt-12 pt-8 border-t-2 border-jungle-light/20 space-y-12">
+                <RSVPForm isFossilized={isRSVPFossilized} />
+
+                {isPhotoSafariEnabled && (
+                  <div className="pt-8 border-t-2 border-jungle-light/20">
+                    <PhotoSafari onPhotoUpload={handleNewPhoto} />
+                  </div>
+                )}
               </div>
             </div>
+
+            {isPhotoSafariEnabled && photos.length > 0 && (
+              <PhotoGallery photos={photos} />
+            )}
           </section>
         </div>
       )}

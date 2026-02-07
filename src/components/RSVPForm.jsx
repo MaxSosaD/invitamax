@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Users, Check, X, Footprints, Clipboard } from 'lucide-react';
 
-const RSVPForm = () => {
+const RSVPForm = ({ isFossilized = false }) => {
     const [formData, setFormData] = useState({
         guestName: '',
         attending: 'confirmado',
@@ -69,8 +69,20 @@ const RSVPForm = () => {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="relative bg-[#F5E6D3] text-earth-brown rounded-[2rem] p-8 border-4 border-[#8B4513] shadow-[8px_8px_0_rgba(139,69,19,0.3)] overflow-hidden"
+                className={`relative bg-[#F5E6D3] text-earth-brown rounded-[2rem] p-8 border-4 border-[#8B4513] shadow-[8px_8px_0_rgba(139,69,19,0.3)] overflow-hidden transition-all duration-700 ${isFossilized ? 'grayscale filter [filter:grayscale(1)_brightness(0.4)_contrast(1.2)] opacity-30 pointer-events-none' : ''}`}
             >
+                {/* Fossil Overlay */}
+                {isFossilized && (
+                    <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none overflow-hidden">
+                        <motion.div
+                            initial={{ scale: 3, opacity: 0, rotate: -40 }}
+                            animate={{ scale: 1, opacity: 1, rotate: -25 }}
+                            className="border-[16px] border-[#3D1F09] text-[#3D1F09] font-luckiest text-7xl px-10 py-6 rounded-2xl rotate-[-25deg] uppercase tracking-tighter text-center shadow-[0_0_20px_rgba(0,0,0,0.5)]"
+                        >
+                            FÓSIL<br />ARCHIVADO
+                        </motion.div>
+                    </div>
+                )}
                 {/* Background Decorative Element (like a faded fossil) */}
                 <div className="absolute top-0 right-0 opacity-5 pointer-events-none p-4">
                     <Footprints size={120} />
