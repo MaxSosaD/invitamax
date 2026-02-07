@@ -9,7 +9,10 @@ import { Volume2, VolumeX, Settings, LogOut, Ghost } from 'lucide-react'
 function App() {
   const [showContent, setShowContent] = useState(false)
   const [isMuted, setIsMuted] = useState(true)
-  const [isRSVPFossilized, setIsRSVPFossilized] = useState(() => localStorage.getItem('isRSVPFossilized') === 'true')
+  const [isRSVPFossilized, setIsRSVPFossilized] = useState(() => {
+    const saved = localStorage.getItem('isRSVPFossilized');
+    return saved === null ? true : saved === 'true'; // Default to true (fossilized)
+  })
   const [isPhotoSafariEnabled, setIsPhotoSafariEnabled] = useState(() => localStorage.getItem('isPhotoSafariEnabled') !== 'false')
   const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('isAdmin') === 'true')
   const [photos, setPhotos] = useState(() => JSON.parse(localStorage.getItem('savedPhotos') || '[]'))
@@ -40,11 +43,22 @@ function App() {
   }
 
   // Admin Long Press Logic
-  const startLongPress = () => {
+  const startLongPress = (e) => {
+    // Only prevent default for touch to avoid menus, leave mouse as is
+    if (e.type === 'touchstart') {
+      // e.preventDefault() // Removing preventDefault as it can break scrolling if not careful
+    }
     longPressTimer.current = setTimeout(() => {
       toggleAdmin()
       if (navigator.vibrate) navigator.vibrate(100)
-    }, 1500) // 1.5 seconds for snappier mobile access
+    }, 1500)
+  }
+
+  const handleAdminTouchStart = (e) => {
+    // Hidden trick: suppress context menu during press
+    const prevent = (ev) => ev.preventDefault();
+    e.target.addEventListener('contextmenu', prevent, { once: true });
+    startLongPress(e);
   }
 
   const cancelLongPress = () => {
@@ -174,8 +188,9 @@ function App() {
                 onMouseDown={startLongPress}
                 onMouseUp={cancelLongPress}
                 onMouseLeave={cancelLongPress}
-                onTouchStart={startLongPress}
+                onTouchStart={handleAdminTouchStart}
                 onTouchEnd={cancelLongPress}
+                onContextMenu={(e) => isAdmin && e.preventDefault()}
                 className="text-white/20 font-bangers text-xs tracking-widest uppercase hover:text-volcano-orange active:text-volcano-orange active:scale-110 transition-all select-none touch-none bg-transparent border-none outline-none"
                 title="Hold for 1.5s for Admin Mode"
               >
